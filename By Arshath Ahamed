@@ -1,0 +1,71 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample FAQs and answers
+faqs = {
+    "How can I apply for an internship?": "You can apply through our official internship portal.",
+    "What is the eligibility for the internship?": "You must be a student enrolled in a college or university.",
+    "When do internship applications open?": "Applications usually open in January and June.",
+    "Is this internship paid?": "Yes, all internships are paid.",
+    "Can international students apply?": "Yes, we accept applications from international students."
+}
+
+# Prepare training data
+questions = list(faqs.keys())
+answers = list(faqs.values())
+
+# Vectorize the questions
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(questions)
+
+def chatbot_response(user_input):
+    user_vec = vectorizer.transform([user_input])
+    similarity = cosine_similarity(user_vec, X)
+    idx = similarity.argmax()
+    confidence = similarity[0][idx]
+    if confidence > 0.3:
+        return answers[idx]
+    else:
+        return "I'm sorry, I don't understand that question. Please rephrase."
+
+# Chat loop
+print("Chatbot: Ask me anything about internships (type 'exit' to quit)")
+while True:
+    user_input = input("You: ")
+    if user_input.lower() == 'exit':
+        print("Chatbot: Goodbye!")
+        break
+    response = chatbot_response(user_input)
+    print("Chatbot:", response)
+
+
+def recommend_domain(skills):
+    # Sample domain data
+    domain_skills = {
+        "Data Science": ["python", "machine learning", "statistics", "pandas"],
+        "Web Development": ["html", "css", "javascript", "react", "node"],
+        "App Development": ["java", "android", "kotlin", "flutter"],
+        "Cybersecurity": ["networking", "linux", "ethical hacking", "cryptography"],
+        "AI/ML": ["python", "tensorflow", "neural networks", "scikit-learn"]
+    }
+
+    scores = {}
+    for domain, required_skills in domain_skills.items():
+        match_score = len(set(skills).intersection(required_skills))
+        scores[domain] = match_score
+
+    # Sort by best matching domain
+    recommended = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    return recommended[:3]
+
+# User input
+user_skills = input("Enter your skills (comma separated): ").lower().split(',')
+
+# Clean and strip whitespace
+user_skills = [skill.strip() for skill in user_skills]
+
+recommendations = recommend_domain(user_skills)
+
+print("\nTop Internship Domain Recommendations:")
+for domain, score in recommendations:
+    print(f"- {domain} (match score: {score})")
